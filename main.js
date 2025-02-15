@@ -25,7 +25,7 @@ class Organism {
         this.x = x;
         this.y = y;
         this.size = size;
-        this.actions = [moveUp, moveRight, moveDown, moveRight, moveRandom];
+        this.actions = [moveUp, moveRight, moveDown, moveLeft, moveRandom];
     }
 
     draw(paint) {
@@ -164,18 +164,22 @@ function getDistanceToLeftWall(organism) {
 }
 
 function moveUp(organism) {
+    if(willCollide(organism, 0)) return;
     organism.y--;
 }
 
 function moveDown(organism) {
+    if(willCollide(organism, 2)) return;
     organism.y++;
 }
 
 function moveLeft(organism) {
+    if(willCollide(organism, 3)) return;
     organism.x--;
 }
 
 function moveRight(organism) {
+    if(willCollide(organism, 1)) return;
     organism.x++;
 }
 
@@ -183,8 +187,72 @@ function moveRandom(organism) {
     let directions = [moveUp, moveRight, moveDown, moveLeft];
 
     let index = Math.floor(Math.random() * 4);
+    if(willCollide(organism, index)) return;
 
     directions[index](organism);
+}
+
+function willCollide(organism, direction) {
+    switch(direction) {
+        case 0:
+            if(organism.y <= organism.size/2) return true;
+            for(let i in organisms) {
+                let o = organisms[i];
+
+                if(o.x == organism.x && o.y == organism.y) continue;
+
+                if(o.x + o.size/2 >= organism.x && o.x <= organism.x + organism.size/2) {
+                    if(o.y + o.size/2 >= organism.y-1 && o.y <= organism.y-1 + organism.size/2) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        case 1:
+            if(organism.x >= 800 - organism.size/2) return true;
+            for(let i in organisms) {
+                let o = organisms[i];
+
+                if(o.x == organism.x && o.y == organism.y) continue;
+
+                if(o.x + o.size/2 >= organism.x+1 && o.x <= organism.x+1 + organism.size/2) {
+                    if(o.y + o.size/2 >= organism.y && o.y <= organism.y + organism.size/2) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        case 2:
+            if(organism.y >= 450 - organism.size/2) return true;
+            for(let i in organisms) {
+                let o = organisms[i];
+
+                if(o.x == organism.x && o.y == organism.y) continue;
+
+                if(o.x + o.size/2 >= organism.x && o.x <= organism.x + organism.size/2) {
+                    if(o.y + o.size/2 >= organism.y+1 && o.y <= organism.y+1 + organism.size/2) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        case 3:
+            if(organism.x <= organism.size/2) return true;
+            for(let i in organisms) {
+                let o = organisms[i];
+
+                if(o.x == organism.x && o.y == organism.y) continue;
+
+                if(o.x + o.size/2 >= organism.x-1 && o.x <= organism.x-1 + organism.size/2) {
+                    if(o.y + o.size/2 >= organism.y && o.y <= organism.y + organism.size/2) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+    }
+
+    return true;
 }
 
 function genRandomBrain() {
@@ -192,8 +260,15 @@ function genRandomBrain() {
 
     brain = [[getDistanceToUpWall, getDistanceToRightWall, getDistanceToDownWall, getDistanceToLeftWall], [0, 0, 0, 0, 0]];
 
+    // No starting brain will have a hidden layer with neurons
+
     // Last step, add connections
-    let connections = [new Connection(0, 4, .5)];
+    // Max of three connections to start with
+    let connections = [];
+
+    for(let i = 0;i<Math.floor(Math.random() * 4);i++) {
+        connections.push(new Connection(Math.floor(Math.random() * 4), Math.floor(Math.random() * 5 + 4), Math.random() * 2 - 1));
+    }
     
     brain.push(connections);
 
@@ -211,18 +286,37 @@ function getInputValues(organism) {
 function log(val) {
     consoleLogger.innerHTML += "<br>" + val;
 }
-let brain = genRandomBrain();
 
-let organisms = [new Organism(brain, 300, 200, 4)];
+function getRandomOrganism() {
+    let brain = genRandomBrain();
+    return new Organism(brain, Math.floor(Math.random() * 797) + 2, Math.floor(Math.random() * 447) + 2, 4);
+}
+
+let organisms = [];
+
+for(let i = 0;i<30;i++) {
+    organisms.push(getRandomOrganism());
+}
+
 let plants = [new Plant(200, 100, 30)];
+let tickCount = 0;
 
 // Update the simulation values (move the organisms)
 function tick() {
+    if(tickCount == 1000) {
+        tickCount = 0;
+
+        for(let i in organisms) {
+            organisms[i] = getRandomOrganism();
+        }
+    }
+
     for(let i in organisms) organisms[i].doAction();
 
     render();
 
-    setTimeout(tick, 20);
+    tickCount++;
+    setTimeout(tick, 0);
 }
 
 // Draw/render the simulation
@@ -230,7 +324,7 @@ function render() {
     paint.clearRect(0, 0, 800, 450);
 
     for(let i in organisms) organisms[i].draw(paint);
-    for(let i in plants) plants[i].draw(paint);
+    //for(let i in plants) plants[i].draw(paint);
 }
 
 tick();
