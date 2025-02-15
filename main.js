@@ -34,7 +34,6 @@ class Organism {
     }
 
     doAction() {
-        console.log(this.brain);
         let tempBrain = exclude(this.brain, this.brain.length-1);
         let connections = this.brain[this.brain.length-1];
         tempBrain[0] = getInputValues(this);
@@ -45,7 +44,6 @@ class Organism {
         for(let layer in tempBrain) {
             for(let i in connections) {
                 let connection = connections[i];
-                let val = connection.val;
                 let startId = connection.startId;
                 let maxStartId = getMaxStartId(tempBrain, layer);
                 let minStartId = getMinStartId(tempBrain, layer);
@@ -104,7 +102,9 @@ function exclude(list, index) {
 
     for(let i in list) {
         if(i==index) continue;
-        otherList.push(list[i]);
+        let tempList = [];
+        for(let j in list[i]) tempList.push(list[i][j])
+        otherList.push(tempList);
     }
 
     return otherList;
@@ -295,37 +295,82 @@ function getRandomOrganism() {
 
 function createMutatedOffspring(organism) {
     // Two main types of mutation: brain structure mutation and brain connection mutation
-    let type = Math.floor(Math.random() * 3);
-    if(type == 3) return organism;
+    let type = Math.floor(Math.random() * 100);
+    if(type >= 50) return new Organism(organism.brain, Math.floor(Math.random() * 797) + organism.size/2, Math.floor(Math.random() * 447) + organism.size/2, organism.size);
+
+    let organismBrain = [];
 
     // For a brain structure mutation:
     // Either a neuron is added, removed, or having its value teaked
-    if(type == 0) {
-        
+    let layer = Math.floor(Math.random() * (organism.brain.length - 2) + 1);
+
+    for(let i in organism.brain) {
+        if(i == organism.brain.length - 1) continue;
+        organismBrain.push([]);
+        for(let j in organism.brain[i]) {
+            organismBrain[i].push(organism.brain[i][j]);
+        }
     }
+    if(type == 0) {
+        organismBrain[layer].push(Math.random() * 2 - 1);
+    }
+
+    organismBrain[0] = [getDistanceToUpWall, getDistanceToRightWall, getDistanceToDownWall, getDistanceToLeftWall];
 
 
     // For a brain connection mutation:
     // Either a brain connection is added, removed, or having its bias tweaked
+    let index = Math.floor(Math.random() * organism.brain[layer].length);
+
+    let connectionsList = [];
+
+    for(let i in organism.brain[organism.brain.length - 1]) {
+        connectionsList.push(organism.brain[organism.brain.length - 1][i]);
+    }
+
+    if(type <= 20) {
+        let type2 = Math.floor(Math.random() * 2);
+        if(type2 == 0 || connectionsList.length == 0) {
+            connectionsList.push(new Connection(Math.floor(Math.random() * 4), Math.floor(Math.random() * 5 + 4), Math.random() * 2 - 1));
+        } else {
+            connectionsList[Math.floor(Math.random() * connectionsList.length)].bias -= Math.random() - 0.5;
+        }
+    }
+
+    organismBrain.push(connectionsList);
+
+    return new Organism(organismBrain, Math.floor(Math.random() * 797) + organism.size/2, Math.floor(Math.random() * 447) + organism.size/2, organism.size)
 }
 
 let organisms = [];
 
-for(let i = 0;i<30;i++) {
+for(let i = 0;i<300;i++) {
     organisms.push(getRandomOrganism());
 }
 
 let plants = [new Plant(200, 100, 30)];
 let tickCount = 0;
+let generation = 1;
 
 // Update the simulation values (move the organisms)
 function tick() {
     if(tickCount == 1000) {
         tickCount = 0;
 
+        let selectedOrganisms = [];
         for(let i in organisms) {
-            organisms[i] = getRandomOrganism();
+            if(organisms[i].x > 400) selectedOrganisms.push(organisms[i]);
         }
+
+        for(let i in organisms) {
+            let index = i % selectedOrganisms.length;
+            if(selectedOrganisms.length == 0) organisms[i] = getRandomOrganism();
+            organisms[i] = createMutatedOffspring(selectedOrganisms[index]);
+        }
+
+        generation++;
+        let generationTag = document.getElementById("GenerationTag");
+        generationTag.children[0].innerHTML = "Generation: " + generation;
     }
 
     for(let i in organisms) organisms[i].doAction();
