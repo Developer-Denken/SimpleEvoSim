@@ -34,6 +34,7 @@ class Organism {
     }
 
     doAction() {
+        console.log(this.brain);
         let tempBrain = exclude(this.brain, this.brain.length-1);
         let connections = this.brain[this.brain.length-1];
         tempBrain[0] = getInputValues(this);
@@ -290,6 +291,22 @@ function log(val) {
 function getRandomOrganism() {
     let brain = genRandomBrain();
     return new Organism(brain, Math.floor(Math.random() * 797) + 2, Math.floor(Math.random() * 447) + 2, 4);
+}
+
+function createMutatedOffspring(organism) {
+    // Two main types of mutation: brain structure mutation and brain connection mutation
+    let type = Math.floor(Math.random() * 3);
+    if(type == 3) return organism;
+
+    // For a brain structure mutation:
+    // Either a neuron is added, removed, or having its value teaked
+    if(type == 0) {
+        
+    }
+
+
+    // For a brain connection mutation:
+    // Either a brain connection is added, removed, or having its bias tweaked
 }
 
 let organisms = [];
